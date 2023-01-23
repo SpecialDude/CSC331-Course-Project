@@ -7,7 +7,6 @@ import sys
 from io import StringIO
 
 
-
 class LexicalAnalysisError(Exception):
     ...
 
@@ -25,9 +24,22 @@ class Token:
 class Util:
 
     @staticmethod
-    is_whitespace(char):
+    def is_whitespace(char):
         return char in (" ", "\n", "\t")
 
+# Definition of States for the Automaton
+#   BaseState - Defines some basic properties to be inherited
+#   Identifier
+#   Keyword
+#   Literal
+#   Indent
+#   Dedent
+#   Punctuator
+#   Comment
+#
+#   Start
+#
+#   Member_Access
 
 class BaseState:
     name = ""
@@ -44,10 +56,43 @@ class BaseState:
 
 class Identifier(BaseState):
     name = "IDENTIFIER"
+    is_identifier = False
 
     @classmethod
-    def transit(cls, self):
-        ...
+    def transit(cls, char):
+        if char == '.':
+            # Member Accessor Operation is expected
+            # If next character is invalid error is raised
+
+            return Member_Access
+
+        if ord('0') <= ord(char) <= ord('9'):
+            # Token is predicted to be an Identifier
+            # if it contains any integer char
+            cls.is_identifier = True
+            return cls
+
+        if ord('a') <= ord(char) <= ord('z') or \
+            ord('A') <= ord(char) <= ord('Z'):
+                # Asci Chars is still being read
+                return cls
+        
+        global token
+
+        if Util.is_whitespace(char):
+            # End of the current token, start reading new
+            print(token)
+            print(cls.is_identifier)
+
+            if not cls.is_identifier and Keyword.is_member(token):
+                cls.is_identifier = False
+                return Keyword
+            else:
+                return Start
+        
+        else:
+            # Invalid token received
+            raise LexicalAnalysisError(f"Unexpected Character({char}) after token({token})")
 
     @staticmethod
     def is_member(char):
@@ -55,6 +100,16 @@ class Identifier(BaseState):
 
 class Keyword(BaseState):
     name = "KEYWORD"
+
+    @classmethod
+    def transit(cls, char):
+        return cls
+
+    @staticmethod
+    def is_member(token):
+        import keyword
+        
+        return keyword.iskeyword(token)
 
 class Literal(BaseState):
     name = "LITERAL"
@@ -91,66 +146,40 @@ class Start(BaseState):
         if Util.is_whitespace(char):
             # Whitespace character
             return Start
-        if ord('a') <= ord(char) <= ord('z') or
+        if ord('a') <= ord(char) <= ord('z') or \
             ord('A') <= ord(char) <= ord('z'):
-                return Asci_numeral
+                return Identifier
 
         if ord('0') <= ord(char) <= ord("1"):
             return Literal
 
-
-class Asci_numeral(BaseState):
-    name = "NUMERAL"
-    type = StateType.INTERMEDIATE
+class Member_Access(BaseState):
+    name = "MemberOperator"
 
     @classmethod
     def transit(cls, char):
-        if char == '.':
-            # Member Accessor Operation is expected
-            # If next character is invalid error is raised
-
-            return Member_Access
-
-        if ord('0') <= ord(char) <= ord('9'):
-            # Token is predicted to be an Identifier
-            # if it contains any integer char
+        if ord('a') <= ord(char) <= ord('z') or \
+            ord('A') <= ord(char) <= ord('Z'):
             return Identifier
 
-        if ord('a') <= ord(char) <= ord('z') or
-            ord('A') <= ord(char) <= ord('Z'):
-                # Asci Chars is still being read
-                return cls
-        
-        if Util.is_whitespace(char):
-            # End of the current token, start reading new
-            return Start
+        # An Invalid Character is read
+        global token
+        raise LexicalAnalysisError(f"Invalid character({char}) after an Identifier token({token})")
 
-        else:
-            global token
-
-            if Keyword.is_member(token):
-                ...
-            else:
-                ...
-            # Invalid token received
-            return Start
-
-class Member_Access(BaseState):
-    name = "MemberAccess"
-
-    @classmethod
-    def transit(cls, char):
-        ...
-
+# The Automaton
 class Automaton:
 
     def __init__(self):
         self.__tokens = []
 
     def save_token(self, token, state):
+        if state.type != StateType.FINAL:
+            return
         newt = Token()
         newt.name = state.name
         newt.value = token
+
+        print(f"{newt.value} --> {newt.name}")
 
         self.__tokens.append(newt)
 
@@ -165,6 +194,8 @@ class Automaton:
         state = Start
         next_state = None
 
+        global token
+
         while True:
             char = input_stream.read(1)
 
@@ -174,14 +205,16 @@ class Automaton:
             next_state = self.recognize(char, state, next_state)
             if next_state != state:
                 self.save_token(token, state)
+                token = ""
             state = next_state
             token += char
+
+
 def main():
 
     global token
     token = ""
     automaton = Automaton()
-
 
     if len(sys.argv) > 1:
         filename = sys.argv[1]
