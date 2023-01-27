@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-"""A Lexical Analyzer for python source codes"""
+"""
+A Lexical Analyzer for python source codes
+
+Author(s): Group 3 CSC 331 Course Project
+Lecture-in-charge: Dr Joseph Akinyemi
+Session: 2021/2022 Academic Session
+
+"""
 
 import enum
 import sys
@@ -322,7 +329,8 @@ def main():
         with open(filename) as fd:
             automaton.run(fd)
     else:
-        print("Enter Python Instruction to parse")
+        print("A Python Lexical Analyzer Program\n")
+        print("Enter Python Instruction to analyze")
         while True:
             ins = input("(lexer): ")
             if ins == "quit":
