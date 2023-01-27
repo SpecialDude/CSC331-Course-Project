@@ -9,3 +9,16 @@ As of interest, the team decided to work on:
 - A Python Interpreter
 
 This repository contain the sources for a simple python lexer program and an Interpreter(still under developement).
+
+### Team Members
+- Odulate Gabriel
+- Okafor Lisa
+- Animasaun Ahmad
+- Soyoye  Boluwatife
+- Kayode Peter
+- Denedo Oghenetega
+- Kareem Mustapha
+- Onasoga Oluwapelumi
+- Adim Solomon
+- Olalere Boluwatife
+- Adeoti Warith
